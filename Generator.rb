@@ -7,12 +7,7 @@ class ChaseGenerator < Generator
 
   
   def initialize
-    
-
-    @chinese_text += MoreText.sentenses(30).join('')
-    @chinese_text += MoreText.sentenses(30).join('')
-    @chinese_text += MoreText.sentenses(30).join('')
-    @chinese_text += MoreText.sentenses(30).join('')
+    @chinese_text =  MoreText.sentenses(60).join('')
   end
 
 
