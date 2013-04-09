@@ -15,18 +15,63 @@ require 'optparse'
 require 'ostruct'
 require 'yaml'
 
+#these could be optional
+require 'moretext'
+require 'faker'
 
 class Generator
   def initialize
+    @@chinese = MoreText.sentenses(30).join('')
+  end
+  
+  def random_string(min,max,language)
+    case language
+    when "chinese" 
+      return random_chinese(min,max)
+    when "english" 
+      return random_english(min,max)
+    else 
+      return random_english(min,max)
+    end
   end
 
-  #the default random_pictures method, the links are pretty slow. You can override. 
-  def random_pictures
+  def random_english(min, max)
+  end
+  
+  def random_name
+    Faker::Name.name
   end
 
-  def test_string
-    return "some strings"
+  def random_username
+    name = Faker::Name.name
+    name.gsub(/\s+/, "").downcase
   end
+
+  def random_chinese(minlength,maxlength)
+    start = Random.rand(CHINESE_TEXT.length - maxlength)
+    length = Random.rand(maxlength-minlength)+minlength
+    return @@chinese[start,length]
+  end
+
+  def random_number(min=0,max=1000)
+    Random.rand(max-min)+min
+  end
+ 
+  #http://stackoverflow.com/a/88341/1016515
+  def random_id
+    o =  [('a'..'z'),('0'..'9'),('A'..'Z')].map{|i| i.to_a}.flatten
+    string  =  (0...10).map{ o[rand(o.length)] }.join
+    return string
+  end
+
+  #the default random_image method, the links are pretty slow. You can override. 
+  def random_image(horizontal=600,vertical=600)
+    image_categories = ['abstract','city','people','transport','animals','food','nature','business', 'nightlife', 'sports','cats','fashion','technics']
+    image_category = image_categories[Random.rand(image_categories.length)]
+    #append a random id to trick the cache
+    return "http://lorempixel.com/" + horizontal.to_s + "/" + vertical.to_s + "/" + image_category + "/" + random_id()[0,5]
+  end
+
 end
 
 def parse_options(argv)
@@ -61,7 +106,7 @@ def parse_options(argv)
 end
 
 #it would be nice to read through and just do sanity checks on the structure
-#unfortunately YAML doesn't have a validation language, so this would be manual
+#unfortunately YAML doesn't have a validation language, so this needs to be manually written
 def validate_rules(rule_yaml)
   return true
 end
@@ -183,7 +228,7 @@ module Sinatra
     
     def build_response(info)
       success_response = info["success"]
-      
+      puts "building"   
       #for each response_object in the success response
       #substitute the generated object
       success_response.scan(/\$(\w*)/).each do |match|
@@ -206,11 +251,13 @@ module Sinatra
 
         success_response.gsub!(/(\$#{match})/,objects.to_json)
       end
+   
       return success_response
     end
 
     #generates single, fixed number, or between min and max number of objects
     def generate_objects(response_object, extra_params)
+      puts "generating"
       if extra_params.nil? or extra_params["count"].nil?
         return generate_object(response_object,extra_params)
       else
@@ -231,6 +278,7 @@ module Sinatra
 
         #category type, pick a random value
         if parameters["values"]
+          puts parameters["values"]
           value = parameters["values"][Random.rand(parameters["values"].length)]
           #fixed value type
         elsif parameters["value"]
@@ -239,10 +287,10 @@ module Sinatra
         else
           if parameters["generator"].nil?
             $stderr.puts "WARNING: Generator not specified for object property #{property}"
-            value = "$not_specified"
+            value = "NOT_SPECIFIED"
           elsif !settings.generator.respond_to?(parameters["generator"]["method"])
             $stderr.puts "WARNING: Generator not found #{parameters["generator"]["method"]}"
-            value = "$not_found"
+            value = "NOT_FOUND"
           else
             value = generate_value(parameters["generator"])
           end
@@ -250,11 +298,17 @@ module Sinatra
         
         new_object[property] = value
       end
+
+      return new_object
     end
         
     #generates a value for a single property
     def generate_value(generator_info)
-      return settings.generator.send(generator_info["method"],generator_info["args"])
+      unless generator_info["args"].nil?
+        return settings.generator.send(generator_info["method"],generator_info["args"])
+      else
+        return settings.generator.send(generator_info["method"])
+      end
     end
    
     def count_range(count_param)

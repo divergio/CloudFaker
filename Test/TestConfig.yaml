@@ -29,7 +29,7 @@ Objects:
       description:
         type: string
         generator:
-          method: Random_description
+          method: random_description
       category:
         type: string
         values:
@@ -41,7 +41,7 @@ Objects:
       image:
         type: string
         generator:
-          method: Random_image
+          method: random_image
           args: [200, 200]
   TestObject:
     detail: A object used in testing
@@ -49,18 +49,18 @@ Objects:
       id:
         type: string
         generator:
-          method: Random_id
+          method: random_id
       price:
         type: integer
         generator:
-          method: Random_number
-            args: [0,200]
+          method: random_number
+          args: 0,200
       category:
         type: string
         values:
-          -A
-          -B
-          -C
+          - A
+          - B
+          - C
       
 
 Requests:
