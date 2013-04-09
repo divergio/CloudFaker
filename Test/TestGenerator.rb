@@ -1,0 +1,5 @@
+
+class CoolGenerator < Generator
+
+end
+

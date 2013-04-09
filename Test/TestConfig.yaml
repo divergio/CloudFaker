@@ -1,0 +1,166 @@
+#some configuration options, if they make sense to go here
+Configuration:
+  #when testing this, we'll pass unimplemented stuff to gabble.me:8888 and run on gabble.me:8080
+  PORT: 8080
+  PRODUCTION_SERVER: http://gabble.me:8888
+#Constants is for things like API secrets, test users, things not as big 
+#as a class but that might be referenced inside responses
+Constants:
+  DEFAULT_USER_TOKEN: 'abc123'
+  DEFAULT_APP_SECRET: 'abc123'
+  #An array will be interpreted as OR
+  TEST_USER_NAME: 'gabble'
+  TEST_PASSWORD: 'gabble'
+  TEST_VALUE: "TEST"
+
+Objects:
+  Item:
+    detail: Information for a single item
+    properties:
+      id: 
+        type: string
+        generator: 
+          method: Random_id
+      price:
+        type: integer
+        generator:
+          method: Random_int_in_range
+          args: [5,15]
+      description:
+        type: string
+        generator:
+          method: Random_description
+      category:
+        type: string
+        values:
+          -Hat
+          -Shoe
+          -Shirt
+      ownerId:
+        type: Author
+      image:
+        type: string
+        generator:
+          method: Random_image
+          args: [200, 200]
+  TestObject:
+    detail: A object used in testing
+    properties:
+      id:
+        type: string
+        generator:
+          method: Random_id
+      price:
+        type: integer
+        generator:
+          method: Random_number
+            args: [0,200]
+      category:
+        type: string
+        values:
+          -A
+          -B
+          -C
+      
+
+Requests:
+  feedItemsForAccountId:
+    type: GET
+    path: /api/:account_id/items/
+    implemented: false
+    parameters:
+      userToken:
+        detail: optional, if no userToken, it returns items displayed on login page
+        type: string
+    success: | 
+      { "success" : 
+        { "items" : $Item }
+        }
+    conditions:
+      userToken : $DEFAULT_USER_TOKEN
+      account_id : Exists
+    failure: |
+        {"error":
+          {"message":"Cannot find User"}
+        }
+    #This needs to be thought out some more.
+    generator_params:
+      Item:
+        #if a value for count is given, it becomes an array
+        count: 
+          min: 5
+          max: 15 
+          
+
+  commentsForItemId:
+    type: GET
+    path: /api/:item_id/comments/
+    implemented: true
+
+  authorInfoForAuthorId:
+    type: GET
+    path: /api/:author_id/
+    implemented: true
+
+
+  testParameterConditions:
+    type: GET
+    path: /test/param_conditions/
+    parameters:
+      requiredValue:
+        type: string
+      fixedValue:
+        type: string
+      constantValue:
+        type: string
+    success: |
+      { "success" : "You are winner."}
+    conditions:
+      requiredValue: Exists
+      fixedValue: ThisIsAFixedValue
+      constantValue: $TEST_VALUE
+    failure: |
+      { "failure" : "Better luck next time." }
+    
+  testPathConditions:
+    type: GET
+    path: /test/path_conditions/:path_variable/
+    parameters:
+    success: |
+      { "success" : "You are winner."}
+    conditions:
+      path_variable: TEST
+    failure: |
+      { "failure" : "Better luck next time." }
+      
+  testSimpleObject:
+    type: GET
+    path: /test/simple_object/
+    success: |
+      { "success" :  $TestObject }
+    failure: |
+      { "failure" : "There is no failure" }
+
+  testSimpleObjectFive:
+    type: GET
+    path: /test/simple_object/five/
+    success: |
+      { "success" :  $TestObject }
+    failure: |
+      { "failure" : "There is no failure" }
+    generator_params:
+      TestObject:
+        count: 5
+
+  testSimpleObjectRange:
+    type: GET
+    path: /test/simple_object/range/
+    success: |
+      { "success" :  $TestObject }
+    failure: |
+      { "failure" : "There is no failure" }
+    generator_params:
+      TestObject:
+        count: 
+          min: 6
+          max: 10

@@ -117,7 +117,7 @@ Requests:
       path: /api/items/
       #if implemented, pass through to other server
       #this allows incrementally adding functionality
-      implemented: true
+      implemented: false
       parameters:
         userToken:
           detail: optional, if no userToken, it returns items displayed on login page

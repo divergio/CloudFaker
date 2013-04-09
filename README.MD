@@ -6,4 +6,10 @@
 # Someday/Maybe
 - Monitor the YAML file for changes, reload if it changes (maybe shotgun can do this for us)
 - Split all of this into a gem, so you need only require the gem in your generator file  and provide the filename of the rules
+- It should be modularized so that you do something like CloudFaker.new(config), but something is strange about Sinatra that I can't get it to work this way.
 - More logging
+
+# Testing Setup
+I know that it is messed up. I'm not sure why I can't just say CloudFaker.new(config), but that doesn't work because the "configure" method is always run first. I think I'm using Sinatra in an unexpected way, that's why it's so clunky that I have to write a file with the test data.
+
+If you are a Sinatra or Rake expert and can suggest an architectural change, please do so. But also know that I've searched exhaustively and tried a lot of other methods. It seems like a simple problem to solve, but it may be more complex than you think. Sinatra needs to have compile time access to the changed settings, otherwise the routes can't be added.
