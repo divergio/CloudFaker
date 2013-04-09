@@ -227,8 +227,7 @@ module Sinatra
     end
     
     def build_response(info)
-      success_response = info["success"]
-      puts "building"   
+      success_response = info["success"].dup
       #for each response_object in the success response
       #substitute the generated object
       success_response.scan(/\$(\w*)/).each do |match|
@@ -257,7 +256,7 @@ module Sinatra
 
     #generates single, fixed number, or between min and max number of objects
     def generate_objects(response_object, extra_params)
-      puts "generating"
+
       if extra_params.nil? or extra_params["count"].nil?
         return generate_object(response_object,extra_params)
       else
