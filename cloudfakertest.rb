@@ -89,7 +89,17 @@ class CloudFakerTest < Test::Unit::TestCase
   end
 
   def test_simple_object_generator_customization
-    
+    10.times() do
+      get '/test/simple_object/customization/'
+      
+      unless last_response.ok?
+        assert false, "Bad response for customization"
+      else                                                                                                                
+        simple_object = JSON.parse(last_response.body)["success"]                                                         
+        assert simple_object["price"] >= 9000, "price less than 9000"
+        assert simple_object["price"] <= 9010, "price greater 9010"  
+      end                                                                                                                 
+    end   
   end
 
   def test_compound_object
@@ -100,15 +110,16 @@ class CloudFakerTest < Test::Unit::TestCase
    assert false, "compound object fail"
   end
 
-  def test_compound_object_with_customization2
-    assert false, ""
+  def test_compound_object_with_customization_variable_number
+    assert false, "compound object fail"
+  end
 
   def test_compound_object_with_count
     assert false, "compound object fail"
   end
 
   def test_compound_object_with_customization_from_variable
-    assert false, "compound object variable customization failed"
+    assert false, "compound object with customization"
   end
 
 end

@@ -16,12 +16,12 @@ require 'ostruct'
 require 'yaml'
 
 #these could be optional
-require 'moretext'
+#require 'moretext'
 require 'faker'
 
 class Generator
   def initialize
-    @@chinese = MoreText.sentenses(30).join('')
+ #   @@chinese = MoreText.sentenses(30).join('')
   end
   
   def random_string(min,max,language)
@@ -48,9 +48,9 @@ class Generator
   end
 
   def random_chinese(minlength,maxlength)
-    start = Random.rand(CHINESE_TEXT.length - maxlength)
-    length = Random.rand(maxlength-minlength)+minlength
-    return @@chinese[start,length]
+   # start = Random.rand(CHINESE_TEXT.length - maxlength)
+   # length = Random.rand(maxlength-minlength)+minlength
+  #  return @@chinese[start,length]
   end
 
   def random_number(min=0,max=1000)
@@ -272,9 +272,14 @@ module Sinatra
       
       new_object = {}
       
-      object["properties"].each do | property, parameters |
-       value = nil;
+      object["properties"].each do | property, default_params |
+        value = nil;
 
+        parameters = default_params
+        unless extra_params.nil?
+          parameters = fuse_params(extra_params[property], default_params)
+        end
+        
         #category type, pick a random value
         if parameters["values"]
           value = parameters["values"][Random.rand(parameters["values"].length)]
@@ -299,7 +304,26 @@ module Sinatra
 
       return new_object
     end
-        
+    
+    def fuse_params(extra_params, default_params)
+      if default_params.nil? and extra_params.nil?
+        $stderr.puts "No specification"
+        return nil
+      elsif default_params.nil?
+        return extra_params
+      elsif extra_params.nil?
+        return default_params
+      elsif !default_params.is_a? Hash
+        #extra params override always (if not a hash)
+        return extra_params
+      else
+        #hash case, merge the hashes recursively
+        return default_params.merge(extra_params) do |key, oldval, newval| 
+          fuse_params(newval,oldval)
+        end
+      end
+    end
+
     #generates a value for a single property
     def generate_value(generator_info)
       if generator_info["args"]

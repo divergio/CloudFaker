@@ -176,4 +176,4 @@ Requests:
       TestObject:
         price:
           generator:
-            args: [900,1000]
+            args: [9000,9010]

@@ -1,10 +1,13 @@
 ## CloudFaker: The DRY RESTful API-specification and dummy server program
 
-Specify your API in one place, produce the documents to give to the server team and the dummy server automatically.
+Specify your API in one place, CloudFaker automatically generates a dummy server to use for protyping, as well as Markdown documentation for your server team (and maybe more things in the future).
 
-Too many acronyms.
-
-Ruby newby, so any stylistic suggestions are welcome.
+## Features
+- Generate a dummy server that will serve "realistic" responses in your specified format
+- A large set of built-in response object generators, plus ability to use your own generators
+- Markdown API specification generation
+- Mark requests as "implemented" and CloudFaker can redirect the request to the production server
+-
 
 ## Configuration
 
@@ -15,10 +18,11 @@ If you want to run it in Rack or Heroku or something, I don't currently support 
 `ruby cloudfaker.rb API_SPECS.yaml -g Generator.rb file`
 
 I don't curren
-
 It currently doesn't support
 
 ## API Language
+
+The API is specified in a simple YAML format.
 
 Parameters come in from three places:
 - HTTP GET URL parameters
@@ -27,6 +31,9 @@ Parameters come in from three places:
 
 CloudFaker just pools them all together, so you can reference any of those using `$` followed by the name of the parameter.
 
+The API specification consists of four sections.
+
+- Configuration : you specify the
 
 
 
@@ -50,3 +57,5 @@ If you are a Sinatra or Rake expert and can suggest an architectural change, ple
 - bundler
 
 This is my first Ruby app, so I didn't learn how to do that yet.
+
+Ruby newby, so any stylistic suggestions are welcome.
