@@ -14,35 +14,6 @@ Constants:
   TEST_VALUE: "TEST"
 
 Objects:
-  Item:
-    detail: Information for a single item
-    properties:
-      id: 
-        type: string
-        generator: 
-          method: Random_id
-      price:
-        type: integer
-        generator:
-          method: Random_int_in_range
-          args: [5,15]
-      description:
-        type: string
-        generator:
-          method: random_description
-      category:
-        type: string
-        values:
-          -Hat
-          -Shoe
-          -Shirt
-      ownerId:
-        type: Author
-      image:
-        type: string
-        generator:
-          method: random_image
-          args: [200, 200]
   TestObject:
     detail: A object used in testing
     properties:
@@ -61,7 +32,17 @@ Objects:
           - A
           - B
           - C
-      
+
+  TestCompoundObject:
+    properties:
+      price:
+        type: integer
+        generator:
+          method: random_number
+          args: [1000,1100]
+      contained_object:
+        type: TestObject
+
 
 Requests:
   feedItemsForAccountId:
@@ -177,3 +158,69 @@ Requests:
         price:
           generator:
             args: [9000,9010]
+    
+  testCompoundObject:
+    type: GET
+    path: /test/compound_object/
+    success: |
+      { "success" : $TestCompoundObject }
+    failure: |
+      { "failure" : "There is no failure" }
+
+  testCompoundObjectParams:
+    type: GET
+    path: /test/compound_object_params/
+    success: |
+      { "success" : $TestCompoundObject }
+    failure: |
+      { "failure" : "There is no failure" }
+    generator_params:
+      TestCompoundObject: 
+        contained_object:
+          price:
+            generator:
+              args: [9000,9010]
+
+  testCompoundObjectCount:
+    type: GET
+    path: /test/compound_object/count/
+    success: |
+      { "success" : $TestCompoundObject }
+    failure: |
+      { "failure" : "There is no failure" }
+    generator_params:
+      TestCompoundObject: 
+        contained_object:
+          count: 5
+          price:
+            generator:
+              args: [9000,9010]
+              
+  testCompoundObjectVariableCount:
+    type: GET
+    path: /test/compound_object/variable/
+    success: |
+      { "success" : $TestCompoundObject }
+    failure: |
+      { "failure" : "There is no failure" }
+    generator_params:
+      TestCompoundObject: 
+        contained_object:
+          count: 
+            min: 5
+            max: 10
+          price:
+            generator:
+              args: [9000,9010]
+
+  testTwoDifferentObjectsOneRequest:
+    type: GET
+    path: /test/two_objects/
+    success: |
+      { "success" : { "object1" : $TestObject, "object2" : $TestObject } }
+    failure: |
+      { "failure" : "There is no failure" }
+
+      
+
+

@@ -16,12 +16,18 @@ require 'ostruct'
 require 'yaml'
 
 #these could be optional
-#require 'moretext'
+require 'moretext'
 require 'faker'
+require 'random_data'
 
 class Generator
   def initialize
- #   @@chinese = MoreText.sentenses(30).join('')
+    @chinese_text =  MoreText.sentenses(30).join('')
+    @chinese_text = @chinese_text +  MoreText.sentenses(30).join('')
+    @chinese_text = @chinese_text +  MoreText.sentenses(30).join('')
+    @chinese_text = @chinese_text +  MoreText.sentenses(30).join('')
+
+    @english_text = Random.paragraphs(100)
   end
   
   def random_string(min,max,language)
@@ -35,7 +41,11 @@ class Generator
     end
   end
 
-  def random_english(min, max)
+  def random_english(minlength, maxlength)
+    start = Random.rand(@english_text.length - maxlength)
+    length = Random.rand(maxlength-minlength)+minlength
+    return @english_text[start,length]
+
   end
   
   def random_name
@@ -48,9 +58,9 @@ class Generator
   end
 
   def random_chinese(minlength,maxlength)
-   # start = Random.rand(CHINESE_TEXT.length - maxlength)
-   # length = Random.rand(maxlength-minlength)+minlength
-  #  return @@chinese[start,length]
+    start = Random.rand(@chinese_text.length - maxlength)
+    length = Random.rand(maxlength-minlength)+minlength
+    return @chinese_text[start,length]
   end
 
   def random_number(min=0,max=1000)
@@ -63,9 +73,19 @@ class Generator
     string  =  (0...10).map{ o[rand(o.length)] }.join
     return string
   end
+ 
+  def random_letters
+    o =  [('a'..'z'),('A'..'Z')].map{|i| i.to_a}.flatten
+    (0...10).map{ o[rand(o.length)] }.join
+  end
+
+
+  def random_image(horizontal=600,vertical=600)
+    "http://instasrc.com/#{horizontal}x#{vertical}/new/#{random_letters}/"
+  end
 
   #the default random_image method, the links are pretty slow. You can override. 
-  def random_image(horizontal=600,vertical=600)
+  def random_image_old(horizontal=600,vertical=600)
     image_categories = ['abstract','city','people','transport','animals','food','nature','business', 'nightlife', 'sports','cats','fashion','technics']
     image_category = image_categories[Random.rand(image_categories.length)]
     #append a random id to trick the cache
@@ -113,7 +133,10 @@ end
 
 def configure_from_options(opts,argv)
   generator_class = nil
-  if File.exist?(opts.generator)
+
+  unless File.exist?(opts.generator)
+    $stderr.puts "WARNING: Generator file #{opts.generator} doesn't exist."
+  else
     #http://stackoverflow.com/a/5306426/1016515
     #a bit hacky, wish there was a better way
     existing_classes = ObjectSpace.each_object(Class).to_a
@@ -128,37 +151,38 @@ def configure_from_options(opts,argv)
       end
     end
     
-    if !generator_class
+    if generator_class.nil?
       $stderr.puts "WARNING: No Generator subclass found in #{opts.generator}"
-    else
-      $stderr.puts "WARNING: Generator file #{opts.generator} doesn't exist."
     end
-
-    #Create a generator (use default if no other)
-    if !generator_class
-      generator = Generator.new
-    else
-      generator = generator_class.new
-    end
-
-    #Load the rules files
-    #http://stackoverflow.com/a/3877355/1016515
-    if File.exist?(argv.first)
-      rule_file_stuff = YAML.load_file(argv.first) 
-
-      validate_rules(rule_file_stuff)
-      configuration = rule_file_stuff["Configuration"]       
-      constants = rule_file_stuff["Constants"]
-      response_objects = rule_file_stuff["Objects"]
-      requests = rule_file_stuff["Requests"]
-    else
-      $stderr.puts "Can't find rules files."
-      exit
-    end
-
-    return [configuration, constants, response_objects, requests, generator]
   end
+  
+  #Create a generator (use default if no other)
+  if generator_class.nil?
+    puts "Using standard generator"
+    generator = Generator.new
+  else
+    puts "Using #{generator_class} generator"
+    generator = generator_class.new
+  end
+
+  #Load the rules files
+  #http://stackoverflow.com/a/3877355/1016515
+  if File.exist?(argv.first)
+    rule_file_stuff = YAML.load_file(argv.first) 
+    
+    validate_rules(rule_file_stuff)
+    configuration = rule_file_stuff["Configuration"]       
+    constants = rule_file_stuff["Constants"]
+    response_objects = rule_file_stuff["Objects"]
+    requests = rule_file_stuff["Requests"]
+  else
+    $stderr.puts "Can't find rules files."
+    exit
+  end
+
+  return [configuration, constants, response_objects, requests, generator]
 end
+
 
 module Sinatra
   module CloudFakerHelper
@@ -269,15 +293,24 @@ module Sinatra
     #generates single object
     def generate_object(object, extra_params)
       generator = settings.generator
-      
+
       new_object = {}
       
       object["properties"].each do | property, default_params |
         value = nil;
 
+        extra_params_for_property = \
+        if !extra_params.nil? and extra_params.has_key?(property) 
+          extra_params[property]
+        else
+          nil
+        end
+
+        #Try to fuse in the extra params (overwriting the old params)
+        #extra params take precedence over default params
         parameters = default_params
         unless extra_params.nil?
-          parameters = fuse_params(extra_params[property], default_params)
+          parameters = fuse_params(extra_params_for_property, default_params)
         end
         
         #category type, pick a random value
@@ -286,6 +319,11 @@ module Sinatra
           #fixed value type
         elsif parameters["value"]
           value = parameters["value"]
+          #response_object type
+        elsif type_is_response_object?(parameters)
+          #pass it on to the generator again
+          value = generate_objects(settings.response_objects[parameters["type"]], \
+                                   extra_params_for_property)
           #generator type
         else
           if parameters["generator"].nil?
@@ -305,6 +343,15 @@ module Sinatra
       return new_object
     end
     
+    def type_is_response_object?(parameters)
+      if parameters.has_key?("type") and
+          settings.response_objects.has_key?(parameters["type"])
+        return true
+      else
+        return false
+      end
+    end
+
     def fuse_params(extra_params, default_params)
       if default_params.nil? and extra_params.nil?
         $stderr.puts "No specification"
@@ -371,7 +418,7 @@ class CloudFaker < Sinatra::Base
         $stderr.puts "We currently don't handle route types of  #{value["route"]}"
       end
     end
-    puts 
+
   end
 
   def self.read_configuration(configuration)    
@@ -383,6 +430,10 @@ class CloudFaker < Sinatra::Base
         set :production_server, value
       end
     end
+  end
+  
+  before do
+    content_type 'application/json'
   end
 
   configure do
@@ -411,8 +462,10 @@ class CloudFaker < Sinatra::Base
     set :constants, @constants
 
   end
+  
+  #this one gets matched to anything that doesn't match before it.
   get "/*" do
-    "Default route, this should actually redirect"
+    halt 400, "Bad route."
   end
    
   if __FILE__== $0 
