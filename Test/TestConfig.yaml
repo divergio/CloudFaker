@@ -54,7 +54,7 @@ Objects:
         type: integer
         generator:
           method: random_number
-          args: 0,200
+          args: [0, 200]
       category:
         type: string
         values:
@@ -164,3 +164,16 @@ Requests:
         count: 
           min: 6
           max: 10
+
+  testSimpleObjectWithGeneratorCustomization:
+    type: GET
+    path: /test/simple_object/customization/
+    success: |
+      { "success" : $TestObject }
+    failure: |
+      { "failure" : "There is no failure" }
+    generator_params:
+      TestObject:
+        price:
+          generator:
+            args: [900,1000]

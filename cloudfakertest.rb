@@ -47,15 +47,68 @@ class CloudFakerTest < Test::Unit::TestCase
     assert last_response.body.include?("success")
   end
 
+  #I realize this isn't ideal testing practice, but it is useful.
+  #This will at least give us high confidence that the random generator is operating within parameters
   def test_simple_object
-    get '/test/simple_object/'
+    10.times do
+      get '/test/simple_object/'
+      unless last_response.ok?
+        assert false, "missing success"
+      else
+        simple_object = JSON.parse(last_response.body)["success"]
+        assert_not_nil simple_object["id"], "id on simple object nil"
+        assert simple_object["price"] >= 0, "price less than 0"
+        assert simple_object["price"] <= 200, "price greater 200"  
+      end
+    end
+  end
+
+  def test_simple_object_five
+    get '/test/simple_object/five/'
     
-    assert last_response.body.include?("success")
-    assert !last_response.body.include?("$") , "$ left in body"
-    simple_object = JSON.parse(last_response.body)["success"]
-    assert_not_nil simple_object["id"], "id on simple object nil"
-    assert simple_object["price"] >= 0, "price less than 0"
-    assert simple_object["price"] <= 200, "price greater 200"  
+    unless last_response.ok?
+      assert false, "missing success"
+    else
+      simple_object = JSON.parse(last_response.body)["success"]
+      assert simple_object.length == 5, "incorrect number of objects returned"
+    end
+  end
+  
+  def test_simple_object_range_customization
+    10.times() do 
+      get '/test/simple_object/range/'
+
+      unless last_response.ok?
+        assert false, "missing success"
+      else
+        simple_object = JSON.parse(last_response.body)["success"]
+        assert simple_object.length >= 6 , "too few objects"
+        assert simple_object.length <= 10, "too many objects"
+      end
+    end
+  end
+
+  def test_simple_object_generator_customization
+    
+  end
+
+  def test_compound_object
+    assert false, "compound object fail"
+  end
+
+  def test_compound_object_with_customization
+   assert false, "compound object fail"
+  end
+
+  def test_compound_object_with_customization2
+    assert false, ""
+
+  def test_compound_object_with_count
+    assert false, "compound object fail"
+  end
+
+  def test_compound_object_with_customization_from_variable
+    assert false, "compound object variable customization failed"
   end
 
 end

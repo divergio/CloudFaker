@@ -241,7 +241,7 @@ module Sinatra
         #check for available additional parameters for the generator
         generator_params = nil
         unless info["generator_params"].nil?
-          unless info["generator_params"][match].il?
+          unless info["generator_params"][match].nil?
             generator_params = info["generator_params"][match]
           end
         end
@@ -277,7 +277,6 @@ module Sinatra
 
         #category type, pick a random value
         if parameters["values"]
-          puts parameters["values"]
           value = parameters["values"][Random.rand(parameters["values"].length)]
           #fixed value type
         elsif parameters["value"]
@@ -303,8 +302,8 @@ module Sinatra
         
     #generates a value for a single property
     def generate_value(generator_info)
-      unless generator_info["args"].nil?
-        return settings.generator.send(generator_info["method"],generator_info["args"])
+      if generator_info["args"]
+        return settings.generator.send(generator_info["method"],*generator_info["args"])
       else
         return settings.generator.send(generator_info["method"])
       end
@@ -314,7 +313,7 @@ module Sinatra
       if count_param.is_a? Integer
         return 1..count_param
       else
-        max = Random.rand(count_param["max"]) + count_param["min"]
+        max = Random.rand(count_param["max"]-count_param["min"]) + count_param["min"]
         return 1..max
       end
     end
