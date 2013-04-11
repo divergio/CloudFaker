@@ -4,6 +4,9 @@
 #
 # 
 
+require 'rubygems'
+require 'bundler/setup'
+
 require 'sinatra/base'
 require 'optparse'
 require 'ostruct'
