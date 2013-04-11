@@ -1,4 +1,4 @@
-## CloudFaker: The DRY RESTful API-specification and dummy server program
+## CloudFaker: Generate Dummy HTTP server from API Specification
 
 Specify your API in one place, CloudFaker automatically generates a dummy server to use for protyping, as well as Markdown documentation for your server team (and maybe more things in the future).
 
@@ -21,8 +21,8 @@ To run the server you need
 - (optionally) custom object generator code
 
 First, make sure you got all the gems:
-`gem install bundler`
-`bundle install`
+```gem install bundler
+`bundle install```
 
 If you want to run it in Rack or Heroku or something, I don't currently support that. I'll add it soon. In the meantime just run it from commandline:
 `ruby cloudfaker.rb API_SPECS.yaml -g Generator.rb file`
@@ -54,24 +54,25 @@ This isn't documented yet.
 
 This isn't documented yet.
 
-# TODO
-- Currently CloudFaker only supports to GET! The other HTTP request types aren't much different, I just haven't added parameter access from POST and PUT request bodies, yet. Once that is done I can support the rest. Sorry.
+## TODO
+- Currently CloudFaker only supports  GET! The other HTTP request types aren't much different, I just haven't added parameter access from POST and PUT request bodies, yet. Once that is done I can support the rest. Sorry.
 - Also missing customization from passed in variables
 - So, I'm actually missing Markdown generation. I'm working on it. Consider this release the minimum viable product.
 
-# Someday/Maybe
+## Someday/Maybe
 - Monitor the YAML file for changes, reload if it changes (maybe shotgun can do this for us)
 - Split all of this into a gem, so you need only require the gem in your generator file  and provide the filename of the rules
 - Architectural change to enable better dependency injection on CloudFaker when testing
 - More logging with a logging library. You should be able to use the server for basic inspection of request bodies, etc.
 - Specification validation. Just walk the hash and check to see everything is as expected.
 
-# Testing Setup
+## Testing Setup
 
 Run `ruby ./Test/cloudfakertest.rb`
-I know that it is messed up. I'm not sure why I can't just say CloudFaker.new(config), but that doesn't work because the "configure" method is always run first. I think I'm using Sinatra in an unexpected way, that's why it's so clunky that I have to hardcode in the location of the test file.
+
+I know that this testing architecture is non-optimal. I'm not sure why I can't just say CloudFaker.new(config), but that doesn't work because the "configure" method is always run first. I think I'm using Sinatra in an unexpected way, that's why it's so clunky that I have to hardcode in the location of the test file.
 
 If you are a Sinatra or Rake expert and can suggest an architectural change to allow this kind of load time dependency injection, please do so. But also know that I've searched exhaustively and tried a lot of other methods. It seems like a simple problem to solve, but it may be more complex than you think. Sinatra needs to have compile time access to the changed settings, otherwise the routes can't be added. I'm not sure how to inject the route depencies at compile time to make this work.
 
-# Request for Comment
+## Request for Comment
 This is my first real Ruby app, so any Ruby experts out there who want to share their suggestions, I'd like to hear them.
