@@ -2,12 +2,6 @@
 # Tyler Barth divergio@gmail.com
 # idea from Kenzou Yeh.
 #
-# Currently it has some structural problems that I haven't been able to solve. 
-# I want to move this all to a gem, and just use a commandline script that imports the gem 
-# and also takes an argument for the configuration file.
-#
-# I don't know how to pass in arguments to an instance of Sinatra, though, i.e. CloudFaker.new(foo,bar)
-# It seems Sinatra doesn't work that way
 # 
 
 require 'sinatra/base'
@@ -27,7 +21,7 @@ class Generator
     @chinese_text = @chinese_text +  MoreText.sentenses(30).join('')
     @chinese_text = @chinese_text +  MoreText.sentenses(30).join('')
 
-    @english_text = Random.paragraphs(100)
+    @english_text = Random.paragraphs(20)
   end
   
   def random_string(min,max,language)
@@ -42,10 +36,12 @@ class Generator
   end
 
   def random_english(minlength, maxlength)
+    puts minlength.to_s + maxlength.to_s
+    @english_text = Random.paragraphs(20)
     start = Random.rand(@english_text.length - maxlength)
     length = Random.rand(maxlength-minlength)+minlength
-    return @english_text[start,length]
-
+    puts @english_text[start,length]
+    @english_text[start,length]
   end
   
   def random_name
@@ -80,8 +76,13 @@ class Generator
   end
 
 
-  def random_image(horizontal=600,vertical=600)
-    "http://instasrc.com/#{horizontal}x#{vertical}/new/#{random_letters}/"
+  def random_image(horizontal=600,vertical=600, category=nil)
+    #random letters are to defeat cacheing
+    if category.nil?
+      "http://instasrc.com/#{horizontal}x#{vertical}/new/#{random_letters}"
+    else
+      "http://instasrc.com/#{horizontal}x#{vertical}/#{category}/new/#{random_letters}"
+    end
   end
 
   #the default random_image method, the links are pretty slow. You can override. 
@@ -131,6 +132,7 @@ def validate_rules(rule_yaml)
   return true
 end
 
+#given results of parsing, configure
 def configure_from_options(opts,argv)
   generator_class = nil
 
@@ -171,20 +173,31 @@ def configure_from_options(opts,argv)
     rule_file_stuff = YAML.load_file(argv.first) 
     
     validate_rules(rule_file_stuff)
-    configuration = rule_file_stuff["Configuration"]       
-    constants = rule_file_stuff["Constants"]
-    response_objects = rule_file_stuff["Objects"]
-    requests = rule_file_stuff["Requests"]
+    configuration = denil(rule_file_stuff["Configuration"])
+    constants = denil(rule_file_stuff["Constants"])
+    response_objects = denil(rule_file_stuff["Objects"])
+    requests = denil(rule_file_stuff["Requests"])
   else
     $stderr.puts "Can't find rules files."
     exit
   end
-
   return [configuration, constants, response_objects, requests, generator]
+end
+
+#if it's nil, just make it an empty hash instead
+def denil(object)
+  if object.nil?
+    return {}
+  else
+    return object
+  end
 end
 
 
 module Sinatra
+  
+  #the helper module that creates a new response at runtime based on the 
+  # :response_objects, :requests, and :generator
   module CloudFakerHelper
     
     def handle_get(name, info)
@@ -193,7 +206,7 @@ module Sinatra
         redirect settings.production_server + request.fullpath
       end
       
-      #check_conditions
+      #check_conditions, if fail reture fail message
       unless conditions_met?(info)
         halt 400, info["failure"]
       end
@@ -313,18 +326,20 @@ module Sinatra
           parameters = fuse_params(extra_params_for_property, default_params)
         end
         
-        #category type, pick a random value
+        #Cases for each type of parameter
+
+        #category type, pick a random value from the categories
         if parameters["values"]
           value = parameters["values"][Random.rand(parameters["values"].length)]
-          #fixed value type
+          #fixed value type, just return the fixed value
         elsif parameters["value"]
           value = parameters["value"]
-          #response_object type
+          #contained response_object type, generate that object
         elsif type_is_response_object?(parameters)
           #pass it on to the generator again
           value = generate_objects(settings.response_objects[parameters["type"]], \
                                    extra_params_for_property)
-          #generator type
+          #parameter type (parameter of a response_object), generate it
         else
           if parameters["generator"].nil?
             $stderr.puts "WARNING: Generator not specified for object property #{property}"
@@ -343,6 +358,9 @@ module Sinatra
       return new_object
     end
     
+    # check if type is a response_object,
+    # i.e. instead of parameters of an object like
+    # "id" or "imageURL", it's "AuthorObject" or "PhotoObject"
     def type_is_response_object?(parameters)
       if parameters.has_key?("type") and
           settings.response_objects.has_key?(parameters["type"])
@@ -352,6 +370,7 @@ module Sinatra
       end
     end
 
+    #merge the params recurisvely, extra_params take precedence and override default_params
     def fuse_params(extra_params, default_params)
       if default_params.nil? and extra_params.nil?
         $stderr.puts "No specification"
@@ -372,6 +391,7 @@ module Sinatra
     end
 
     #generates a value for a single property
+    #dispatches to generator methods with attached args
     def generate_value(generator_info)
       if generator_info["args"]
         return settings.generator.send(generator_info["method"],*generator_info["args"])
@@ -380,6 +400,7 @@ module Sinatra
       end
     end
    
+    #interpret the count property, is it a value or a range?
     def count_range(count_param)
       if count_param.is_a? Integer
         return 1..count_param
@@ -421,7 +442,7 @@ class CloudFaker < Sinatra::Base
 
   end
 
-  def self.read_configuration(configuration)    
+  def self.read_configuration(configuration)
     configuration.each do |key, value|
       case key
       when "PORT"
@@ -440,7 +461,7 @@ class CloudFaker < Sinatra::Base
     opts, arg = 0, 0
     if __FILE__ == $0
       opts, argv = parse_options(ARGV)
-    else #in test mode
+    else #in test mode, TODO this should be an explicit environment variable
       opts = OpenStruct.new
       opts.generator = "./Test/TestGenerator.rb"
       argv = ["./Test/TestConfig.yaml"]
@@ -465,7 +486,7 @@ class CloudFaker < Sinatra::Base
   
   #this one gets matched to anything that doesn't match before it.
   get "/*" do
-    halt 400, "Bad route."
+    halt 400, "Route not found."
   end
    
   if __FILE__== $0 
