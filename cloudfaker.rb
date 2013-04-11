@@ -11,6 +11,7 @@ require 'sinatra/base'
 require 'optparse'
 require 'ostruct'
 require 'yaml'
+require 'json'
 
 #these could be optional
 require 'moretext'

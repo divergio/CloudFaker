@@ -4,10 +4,14 @@ GEM
     faker (1.1.2)
       i18n (~> 0.5)
     i18n (0.6.4)
+    json (1.7.7)
+    minitest (4.7.1)
     moretext (0.1.0)
     rack (1.5.2)
     rack-protection (1.5.0)
       rack
+    rack-test (0.6.2)
+      rack (>= 1.0)
     random_data (1.6.0)
     sinatra (1.4.2)
       rack (~> 1.5, >= 1.5.2)
@@ -20,6 +24,9 @@ PLATFORMS
 
 DEPENDENCIES
   faker
+  json
+  minitest
   moretext
+  rack-test
   random_data
   sinatra
