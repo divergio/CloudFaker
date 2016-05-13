@@ -1,3 +1,5 @@
+#FYI: This was a useful learning experience for me, but since then many API specification standards (and mocking tools) have been developed. Check out [Swagger](http://swagger.io "Swagger API specification") or other formats. 
+
 ## CloudFaker: Generate Dummy HTTP server from API Specification
 
 Specify your API in one place, CloudFaker automatically generates a dummy server to use for protyping, as well as Markdown documentation for your server team (and maybe more things in the future).
